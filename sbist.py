@@ -37,9 +37,9 @@ class_dict = {
     },
     'luchador': {
         'hp' : 4,
-        'atk': -1,
+        'atk': 0,
         'def': -1,
-        'evd': 2,
+        'evd': 1,
     },
     'blackboss': {
         'hp' : 4,
@@ -51,7 +51,7 @@ class_dict = {
         'hp' : 3,
         'atk': 2,
         'def': -2,
-        'evd': 1,
+        'evd': 0,
     },
 }
 
@@ -80,7 +80,7 @@ class Player():
         self.class_name = kwargs.get('class_name')
 
 class SBIST(commands.Cog):
-    """My custom cog"""
+    """Squanch Battle In-Finite[st]"""
     
     def __init__(self, bot):
         super().__init__()
@@ -119,6 +119,7 @@ class SBIST(commands.Cog):
     # GAME SETUP 
     @commands.command()
     async def sbistest (self, ctx):
+        """Squanch Battle In-Finite[st] Combat Testing"""
         registered = await self.config.user(ctx.author).user_data.registered() == True
         if registered == True: 
             if ctx.message.mentions:
@@ -175,7 +176,7 @@ class SBIST(commands.Cog):
                 
     @commands.group()
     async def profile(self, ctx):
-        """"""
+        """Commands for Squanch Battle In-Finite[st] profile and customizations."""
         pass 
         
     @profile.command()
@@ -268,53 +269,97 @@ class SBIST(commands.Cog):
                     await ctx.send(embed=em)
             else:
                 await self.embed_msg(ctx, 'You have not registered a class yet.')
-                
+        else:
+            await self.embed_msg(ctx, 'You cannot change your class while a match is in progress.')
+            
     @commands.command()
     async def matchup(self, ctx, class_type: str):
+        """Simulate matchups per class for Squanch Battle In-Finite[st]."""
         if not self.in_progress:
-            if class_type in list(class_name_dict.keys()):
-                start = time.time()
-                total_wins = 0
-                total_loss = 0
-                run_num = 10000
-                result_text = ':crossed_swords:  |  **P1 Matchup Results for {}**\n\n'.format(class_type)
+            if class_type == 'all':
+                run_num = 5000
+                result_text = ':crossed_swords:  |  **Overall P1 Matchup Results**\n\n'
                 result_text += '```Python\nSimulations: {}\n-------------------------------------\n'.format(run_num)
-                classes = list(class_name_dict.keys())
-                for key in classes:
-                    if class_type != key:
-                        wins = await self.simulate(run_num, class_type, key, ctx) 
-                        result_text += 'Vs. {}: {} / {} - {}%\n'.format(key, wins[0], wins[1],
-                                                                        round((wins[0] / (wins[0] + wins[1]) * 100), 2))
-                        total_wins += wins[0]
-                        total_loss += wins[1]
-                result_text +='Average Win Rate: {}%\n'.format(round((total_wins / (total_wins + total_loss) * 100), 2))
-                end = time.time()
-                result_text += '-------------------------------------\n{} seconds elapsed.'.format(round(end - start, 2))
+                sorted_list = []
+                exclude_list = []
+                for x in list(class_name_dict.keys()):
+                    total_wins = 0
+                    total_loss = 0
+                    for y in list(class_name_dict.keys()):
+                        if x != y:
+                            wins = await self.simulate(run_num, x, y, ctx)
+                            total_wins += wins[0]
+                            total_loss += wins[1]
+                    sorted_list.append([x, round((total_wins / (total_wins + total_loss) * 100), 2)])
+                sorted_list.sort(key = lambda x: x[1], reverse=True)
+                for x in sorted_list:
+                    result_text += '{}: {}%\n'.format(x[0], x[1])
                 result_text += '```'
                 await ctx.send(result_text)
                 
-                start = time.time()
-                total_wins = 0
-                total_loss = 0
-                run_num = 10000
-                result_text = ':crossed_swords:  |  **P2 Matchup Results for {}**\n\n'.format(class_type)
+                run_num = 5000
+                result_text = ':crossed_swords:  |  **Overall P2 Matchup Results**\n\n'
                 result_text += '```Python\nSimulations: {}\n-------------------------------------\n'.format(run_num)
-                classes = list(class_name_dict.keys())
-                for key in classes:
-                    if class_type != key:
-                        wins = await self.simulate(run_num, class_type, key, ctx, True) 
-                        result_text += 'Vs. {}: {} / {} - {}%\n'.format(key, wins[0], wins[1],
-                                                                        round((wins[0] / (wins[0] + wins[1]) * 100), 2))
-                        total_wins += wins[0]
-                        total_loss += wins[1]
-                result_text +='Average Win Rate: {}%\n'.format(round((total_wins / (total_wins + total_loss) * 100), 2))
-                end = time.time()
-                result_text += '-------------------------------------\n{} seconds elapsed.'.format(round(end - start, 2))
+                sorted_list = []
+                exclude_list = []
+                for x in list(class_name_dict.keys()):
+                    total_wins = 0
+                    total_loss = 0
+                    for y in list(class_name_dict.keys()):
+                        if x != y:
+                            wins = await self.simulate(run_num, x, y, ctx, True)
+                            total_wins += wins[0]
+                            total_loss += wins[1]
+                    sorted_list.append([x, round((total_wins / (total_wins + total_loss) * 100), 2)])
+                sorted_list.sort(key = lambda x: x[1], reverse=True)
+                for x in sorted_list:
+                    result_text += '{}: {}%\n'.format(x[0], x[1])
                 result_text += '```'
                 await ctx.send(result_text)
             else:
-                em = discord.Embed(title='Matchup Simulation', description='{} You did not enter a valid class.'.format(ctx.message.author.mention, colour=0xe74c3c))
-                await ctx.send(embed=em)
+                if class_type in list(class_name_dict.keys()):
+                    start = time.time()
+                    total_wins = 0
+                    total_loss = 0
+                    run_num = 10000
+                    result_text = ':crossed_swords:  |  **P1 Matchup Results for {}**\n\n'.format(class_type)
+                    result_text += '```Python\nSimulations: {}\n-------------------------------------\n'.format(run_num)
+                    classes = list(class_name_dict.keys())
+                    for key in classes:
+                        if class_type != key:
+                            wins = await self.simulate(run_num, class_type, key, ctx) 
+                            result_text += 'Vs. {}: {} / {} - {}%\n'.format(key, wins[0], wins[1],
+                                                                            round((wins[0] / (wins[0] + wins[1]) * 100), 2))
+                            total_wins += wins[0]
+                            total_loss += wins[1]
+                    result_text +='Average Win Rate: {}%\n'.format(round((total_wins / (total_wins + total_loss) * 100), 2))
+                    end = time.time()
+                    result_text += '-------------------------------------\n{} seconds elapsed.'.format(round(end - start, 2))
+                    result_text += '```'
+                    await ctx.send(result_text)
+                    
+                    start = time.time()
+                    total_wins = 0
+                    total_loss = 0
+                    run_num = 10000
+                    result_text = ':crossed_swords:  |  **P2 Matchup Results for {}**\n\n'.format(class_type)
+                    result_text += '```Python\nSimulations: {}\n-------------------------------------\n'.format(run_num)
+                    classes = list(class_name_dict.keys())
+                    for key in classes:
+                        if class_type != key:
+                            wins = await self.simulate(run_num, class_type, key, ctx, True) 
+                            result_text += 'Vs. {}: {} / {} - {}%\n'.format(key, wins[0], wins[1],
+                                                                            round((wins[0] / (wins[0] + wins[1]) * 100), 2))
+                            total_wins += wins[0]
+                            total_loss += wins[1]
+                    result_text +='Average Win Rate: {}%\n'.format(round((total_wins / (total_wins + total_loss) * 100), 2))
+                    end = time.time()
+                    result_text += '-------------------------------------\n{} seconds elapsed.'.format(round(end - start, 2))
+                    result_text += '```'
+                    await ctx.send(result_text)
+                else:
+                    em = discord.Embed(title='Matchup Simulation', description='{} You did not enter a valid class.'.format(ctx.message.author.mention, colour=0xe74c3c))
+                    await ctx.send(embed=em)
         else:
             await self.embed_msg(ctx, 'You cannot run a matchup simulation while a match is in progress.')
         
@@ -328,6 +373,7 @@ class SBIST(commands.Cog):
         class_one_wins = 0
         class_two_wins = 0
         i = 0
+        turns = 0
         
         while i < run_num:
             while player_one.rounds != 2 and player_two.rounds != 2:
@@ -341,8 +387,6 @@ class SBIST(commands.Cog):
                 opponent.roll = self.roll()
                 choice = self.seagull_sim(opponent.hp, opponent.dfn, opponent.evd, player.roll)
                 damage = 0
-                if player.class_name == 'luchador':
-                    choice = 2
                 if choice == 1:
                     opponent.roll += opponent.dfn
                     opponent.roll = 1 if opponent.roll <= 0 else opponent.roll
@@ -360,8 +404,17 @@ class SBIST(commands.Cog):
                 elif player_two.first == True:
                     player_one.hp = opponent.hp
                     
-                if player.class_name == 'paladin' and player.roll > opponent.roll and player.hp > 0 and choice == 1:
-                    shield_damage = player.roll  - opponent.roll if (player.roll - opponent.roll) <= 2 else 2
+                if player.class_name == 'paladin' and opponent.roll > player.roll and player.hp > 0 and choice == 1:
+                    shield_damage = opponent.roll - player.roll if (opponent.roll - player.roll) <= 2 else 2
+                    #shield_damage = 1
+                    if player_two.first == True:
+                        player_one.hp -= shield_damage
+                    else:
+                        player_two.hp -= shield_damage
+                        
+                if player.class_name == 'luchador' and opponent.roll > player.roll and choice == 2:
+                    #shield_damage = player.roll  - opponent.roll if (player.roll - opponent.roll) <= 2 else 2
+                    shield_damage = 2
                     if player_two.first == True:
                         player_one.hp -= shield_damage
                     else:
@@ -373,14 +426,14 @@ class SBIST(commands.Cog):
                     #await ctx.send('{} died'.format(player_one.class_name))
                     player_one.hp = player_one.max_hp
                     if player_one.class_name == 'berserker':
-                        player_one = self.swap_stats(player_one, 3, -3, 1)
+                        player_one = self.swap_stats(player_one, 3, -3, player_one.evd)
                     player_two.rounds += 1
                 elif player_two.hp <= 0:
                     #print('{} died'.format(player_two.class_name))
                     #await ctx.send('{} died'.format(player_two.class_name))
                     player_two.hp = player_two.max_hp
                     if player_two.class_name == 'berserker':
-                        player_two = self.swap_stats(player_two, 3, -3, 1)
+                        player_two = self.swap_stats(player_two, 3, -3, player_two.evd)
                     player_one.rounds += 1
                 #print('{} {}'.format(player_one.rounds, player_two.rounds))
                 if player_one.rounds == 2 or player_two.rounds == 2:
@@ -391,6 +444,7 @@ class SBIST(commands.Cog):
                 player_two.first = 1 if player_two.first == 0 else 0
                 player_one.roll = 0
                 player_two.roll = 0
+                turns += 1
             if player_one.rounds == 2:
                 #print('{} won'.format(player_one.class_name))
                 #await ctx.send('{} won'.format(player_one.class_name))
@@ -406,6 +460,7 @@ class SBIST(commands.Cog):
                     player_one = self.create_sim_player(class_one, True)
                     player_two = self.create_sim_player(class_two, False)
             i += 1
+            turns = 0
         return [class_one_wins, class_two_wins]  
     
     async def get_theme(self, type: int, player):
@@ -572,8 +627,6 @@ class SBIST(commands.Cog):
         actions = ''
         if player.first == 1:
             actions = 'Attack'
-            if player.class_name == 'luchador':
-                actions += ', Anaconda Squeeze'
         elif player.first == 0:
             actions = 'Defend, Evade'
         em.add_field(name='Actions', value=actions)
@@ -589,8 +642,6 @@ class SBIST(commands.Cog):
             
     async def set_attack_reactions(self, player):
         attack = [SWORD_EMOJI]
-        if player.class_name == 'luchador':
-            attack.append(GRAPPLE_EMOJI)
         for emoji in attack:
             await self.message.add_reaction(emoji)
     
@@ -633,11 +684,8 @@ class SBIST(commands.Cog):
                             await player.embed.clear_reactions()
                             self.swap_turns()
                             self.delete.append(await self.text.channel.send("{} rolled a {}!\nWaiting on {}'s defensive action.".format(player.name,player.roll,opponent.name)))
-                            if payload.emoji.name == GRAPPLE_EMOJI:
-                                await opponent.embed.add_reaction(EVADE_EMOJI)
-                            else:
-                                await opponent.embed.add_reaction(SHIELD_EMOJI)
-                                await opponent.embed.add_reaction(EVADE_EMOJI)
+                            await opponent.embed.add_reaction(SHIELD_EMOJI)
+                            await opponent.embed.add_reaction(EVADE_EMOJI)
                             self.message = opponent.embed
                             self.calculating == False
                             
@@ -671,6 +719,13 @@ class SBIST(commands.Cog):
                             if player.class_name == 'paladin' and player.roll > opponent.roll and player.hp > 0 and payload.emoji.name == SHIELD_EMOJI:
                                     shield_damage = player.roll  - opponent.roll if (player.roll - opponent.roll) <= 2 else 2
                                     damage_text += '\nBlessed Shield dealt {} damage to {}.'.format(shield_damage, opponent.name)
+                                    if opponent.name == self.player_one.name:
+                                        self.player_one.hp -= shield_damage
+                                    else:
+                                        self.player_two.hp -= shield_damage
+                            if player.class_name == 'luchador' and player.roll > opponent.roll and payload.emoji.name == EVADE_EMOJI:
+                                    shield_damage = 2
+                                    damage_text += '\nEl Cangrejo Submission dealt {} damage to {}.'.format(shield_damage, opponent.name)
                                     if opponent.name == self.player_one.name:
                                         self.player_one.hp -= shield_damage
                                     else:
